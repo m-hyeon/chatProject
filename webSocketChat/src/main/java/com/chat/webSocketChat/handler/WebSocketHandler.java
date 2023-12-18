@@ -42,8 +42,17 @@ public class WebSocketHandler extends TextWebSocketHandler {
         Message message = gson.fromJson(textMessage.getPayload(), Message.class);
         message.setSender(session.getId());
 
+        /* 전체 사용자에게 메시지 전달
         for (WebSocketSession webSession : sessions.values()) {
-            webSession.sendMessage(new TextMessage(message.toString()));
+            webSession.sendMessage();
+        }
+        */
+
+        // 특정 세션에게만 메시지 전달
+        WebSocketSession receiver = sessions.get(message.getReceiver());
+        
+        if (receiver != null && receiver.isOpen()) {
+            receiver.sendMessage(new TextMessage(message.toString()));
         }
     }
 
