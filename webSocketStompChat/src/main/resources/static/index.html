@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+    <!-- url 로 사용
+    // sockjs 사용 이유: 브라우저와 웹서버 사이에 자연시간, 크로스 브라우징 지원하여
+    // 최신 브라우저에서도 해당 라이브러리의 api가 잘 작동하도록 지원하는 라이브러리임
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    -->
+
+    <!-- 다운받아서 사용
+    <script src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/2.3.3-1/stomp.min.js"></script>
+    -->
+
+    <!-- 공식문서 (작동안함)
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@5.0.0/bundles/stomp.umd.js"></script>
+    -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<div id="div">
+    <div>
+        <label>Channel 1</label>
+        <button id="connect1" type="submit">Connect</button>
+        <button id="disconnect1" type="submit">Disconnect</button>
+    </div>
+    <div>
+        <label>Channel 2</label>
+        <button id="connect2" type="submit">Connect</button>
+        <button id="disconnect2" type="submit">Disconnect</button>
+    </div>
+
+    <br/><br/>
+
+    <form>
+        <label for="name">What is your name?</label>
+        <input type="text" id="name" placeholder="Your name here...">
+        <button id="send" type="submit">Send</button>
+    </form>
+</div>
+<br/>
+<div>
+    <table id="conversation">
+        <thead>
+        <tr>
+            <th>Greetings</th>
+        </tr>
+        </thead>
+        <tbody id="greetings">
+        </tbody>
+    </table>
+</div>
+</body>
+<script th:inline="javascript">
+    $(document).ready(function(){
+        var stompClient = null;
+
+        // Channel 1 서버에 연결
+        function connect1() {
+            console.log("connect 1");
+            stompClient = Stomp.client('ws://localhost:8080/gs-guide-websocket');
+            $("#greetings").html("");
+            stompClient.connect({}, function() {
+                console.log('connected!!!');
+
+                stompClient.subscribe('/topic/greetings1', (greeting) => {
+                    console.log("Greeting 1");
+                    showGreeting(JSON.parse(greeting.body).content);
+                });
+            }, onError);
+        }
+
+        // Channel 2 서버에 연결
+        function connect2() {
+            console.log("connect 2");
+            stompClient = Stomp.client('ws://localhost:8080/gs-guide-websocket');
+            $("#greetings").html("");
+            stompClient.connect({}, function() {
+                console.log('connected!!!');
+
+                stompClient.subscribe('/topic/greetings2', (greeting) => {
+                    console.log("Greeting 2");
+                    showGreeting(JSON.parse(greeting.body).content);
+                });
+            }, onError);
+        }
+
+        function onError() {
+            console.log("error");
+        }
+
+        function sendName() {
+            var username = $("#name").val();
+            stompClient.send("/app/hello", {}, JSON.stringify({
+                "name": username,
+            }));
+        }
+
+        function showGreeting(message) {
+            $("#greetings").append("<tr><td>" + message + "</td></tr>");
+        }
+
+        $("form").on('submit', (e) => e.preventDefault());
+        $( "#connect1" ).click(() => connect1());
+        $( "#connect2" ).click(() => connect2());
+        $( "#send" ).click(() => sendName());
+    });
+</script>
+</html>
